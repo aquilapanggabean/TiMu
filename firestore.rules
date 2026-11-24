@@ -1,0 +1,528 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Safety Net: Default deny all unmatched paths
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Hardened Global Primitives
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidCurrency(code) {
+      return code in ['USD', 'IDR', 'EUR', 'GBP', 'SGD'];
+    }
+
+    // Validation Blueprints (Pillar 2)
+    function isValidUserPrivate(data, userId) {
+      return data.keys().hasAll(['userId', 'email', 'activeMode', 'preferredCurrency', 'preferredLocale', 'createdAt'])
+        && data.keys().hasOnly(['userId', 'email', 'phonePrivate', 'activeMode', 'preferredCurrency', 'preferredLocale', 'themePreference', 'createdAt', 'updatedAt'])
+        && data.userId == userId
+        && data.userId == request.auth.uid
+        && data.email is string && data.email.size() <= 200
+        && (!('phonePrivate' in data) || (data.phonePrivate is string && data.phonePrivate.size() <= 40))
+        && data.activeMode in ['talent', 'employer']
+        && isValidCurrency(data.preferredCurrency)
+        && data.preferredLocale in ['en', 'id']
+        && (!('themePreference' in data) || data.themePreference in ['light', 'dark'])
+        && data.createdAt is timestamp;
+    }
+
+    function isValidTalentPublic(data, userId) {
+      return data.keys().hasAll(['userId', 'candidateCode', 'category', 'careerField', 'topSkills', 'expPoints', 'tierLevel', 'firstQuestCompleted', 'createdAt'])
+        && data.keys().hasOnly([
+          'userId', 'candidateCode', 'category', 'educationDetail', 'experienceSummary',
+          'hasNoFormalExperience', 'careerField', 'interests', 'topSkills', 'workModes',
+          'bootcampHistory', 'portfolioUrl', 'linkedinUrl', 'city', 'countryCode',
+          'lat', 'lng', 'timezone', 'expPoints', 'tierLevel', 'firstQuestCompleted',
+          'isVerified', 'isPremium', 'completedGigsCount', 'avatarPalette', 'createdAt', 'updatedAt'
+        ])
+        && data.userId == userId
+        && data.candidateCode is string && data.candidateCode.size() <= 24
+        && data.category is string && data.category.size() <= 80
+        && (!('educationDetail' in data) || (data.educationDetail is string && data.educationDetail.size() <= 200))
+        && (!('experienceSummary' in data) || (data.experienceSummary is string && data.experienceSummary.size() <= 500))
+        && (!('hasNoFormalExperience' in data) || data.hasNoFormalExperience is bool)
+        && data.careerField is string && data.careerField.size() <= 100
+        && data.topSkills is list && data.topSkills.size() <= 3 && (data.topSkills.size() == 0 || data.topSkills[0] is string)
+        && (!('interests' in data) || (data.interests is list && data.interests.size() <= 10 && (data.interests.size() == 0 || data.interests[0] is string)))
+        && (!('workModes' in data) || (data.workModes is list && data.workModes.size() <= 3 && (data.workModes.size() == 0 || data.workModes[0] is string)))
+        && (!('bootcampHistory' in data) || (data.bootcampHistory is string && data.bootcampHistory.size() <= 240))
+        && (!('portfolioUrl' in data) || (data.portfolioUrl is string && data.portfolioUrl.size() <= 300))
+        && (!('linkedinUrl' in data) || (data.linkedinUrl is string && data.linkedinUrl.size() <= 300))
+        && (!('city' in data) || (data.city is string && data.city.size() <= 80))
+        && (!('countryCode' in data) || (data.countryCode is string && data.countryCode.size() <= 8))
+        && (!('timezone' in data) || (data.timezone is string && data.timezone.size() <= 32))
+        && data.expPoints is number && data.expPoints >= 0 && data.expPoints <= 100000
+        && data.tierLevel is number && data.tierLevel >= 0 && data.tierLevel <= 10
+        && data.firstQuestCompleted is bool
+        && (!('isVerified' in data) || data.isVerified is bool)
+        && (!('isPremium' in data) || data.isPremium is bool)
+        && (!('completedGigsCount' in data) || (data.completedGigsCount is number && data.completedGigsCount >= 0))
+        && (!('avatarPalette' in data) || (data.avatarPalette is string && data.avatarPalette.size() <= 24))
+        && data.createdAt is timestamp;
+    }
+
+    function isValidTalentIdentity(data, userId) {
+      return data.keys().hasAll(['userId', 'fullName', 'updatedAt'])
+        && data.keys().hasOnly(['userId', 'fullName', 'avatarUrl', 'headline', 'updatedAt'])
+        && data.userId == userId
+        && data.userId == request.auth.uid
+        && data.fullName is string && data.fullName.size() >= 1 && data.fullName.size() <= 120
+        && (!('avatarUrl' in data) || (data.avatarUrl is string && data.avatarUrl.size() <= 500))
+        && (!('headline' in data) || (data.headline is string && data.headline.size() <= 160))
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidEmployerProfile(data, userId) {
+      return data.keys().hasAll(['userId', 'businessName', 'industry', 'tokenBalance', 'createdAt'])
+        && data.keys().hasOnly(['userId', 'businessName', 'industry', 'city', 'countryCode', 'timezone', 'tokenBalance', 'isVerified', 'isPremium', 'premiumExpiresAt', 'createdAt', 'updatedAt'])
+        && data.userId == userId
+        && data.userId == request.auth.uid
+        && data.businessName is string && data.businessName.size() >= 1 && data.businessName.size() <= 140
+        && data.industry is string && data.industry.size() <= 100
+        && (!('city' in data) || (data.city is string && data.city.size() <= 80))
+        && (!('countryCode' in data) || (data.countryCode is string && data.countryCode.size() <= 8))
+        && (!('timezone' in data) || (data.timezone is string && data.timezone.size() <= 32))
+        && data.tokenBalance is number && data.tokenBalance >= 0 && data.tokenBalance <= 10000
+        && (!('isVerified' in data) || data.isVerified is bool)
+        && (!('isPremium' in data) || data.isPremium is bool)
+        && data.createdAt is timestamp;
+    }
+
+    function isValidOpportunity(data) {
+      return data.keys().hasAll(['employerId', 'businessName', 'opportunityType', 'title', 'careerField', 'workMode', 'budgetMinor', 'currency', 'status', 'createdAt'])
+        && data.keys().hasOnly(['employerId', 'businessName', 'employerVerified', 'opportunityType', 'title', 'description', 'deliverableScope', 'careerField', 'workMode', 'city', 'lat', 'lng', 'timezone', 'budgetMinor', 'currency', 'deadline', 'isPriority', 'status', 'createdAt', 'updatedAt'])
+        && data.employerId == request.auth.uid
+        && data.businessName is string && data.businessName.size() <= 140
+        && data.opportunityType in ['escrow_gig', 'part_time', 'full_time']
+        && data.title is string && data.title.size() >= 3 && data.title.size() <= 160
+        && (!('description' in data) || (data.description is string && data.description.size() <= 2000))
+        && (!('deliverableScope' in data) || (data.deliverableScope is string && data.deliverableScope.size() <= 1000))
+        && data.careerField is string && data.careerField.size() <= 100
+        && data.workMode in ['remote', 'onsite', 'hybrid']
+        && (!('city' in data) || (data.city is string && data.city.size() <= 80))
+        && (!('timezone' in data) || (data.timezone is string && data.timezone.size() <= 32))
+        && data.budgetMinor is number && data.budgetMinor > 0
+        && isValidCurrency(data.currency)
+        && (!('deadline' in data) || (data.deadline is string && data.deadline.size() <= 40))
+        && (!('isPriority' in data) || data.isPriority is bool)
+        && data.status in ['open', 'closed', 'filled']
+        && data.createdAt is timestamp;
+    }
+
+    function isValidApplication(data) {
+      return data.keys().hasAll(['opportunityId', 'employerId', 'talentId', 'pitch', 'status', 'createdAt'])
+        && data.keys().hasOnly(['opportunityId', 'opportunityTitle', 'employerId', 'businessName', 'talentId', 'candidateCode', 'talentSkills', 'talentTierLevel', 'talentVerified', 'pitch', 'portfolioLink', 'status', 'createdAt', 'updatedAt'])
+        && isValidId(data.opportunityId)
+        && isValidId(data.employerId)
+        && isValidId(data.talentId)
+        && data.pitch is string && data.pitch.size() >= 5 && data.pitch.size() <= 1500
+        && (!('portfolioLink' in data) || (data.portfolioLink is string && data.portfolioLink.size() <= 300))
+        && (!('talentSkills' in data) || (data.talentSkills is list && data.talentSkills.size() <= 3))
+        && data.status in ['applied', 'shortlisted', 'hired', 'closed']
+        && data.createdAt is timestamp;
+    }
+
+    function isValidTalentUnlock(data, unlockId) {
+      return data.keys().hasAll(['employerId', 'talentId', 'tokensSpent', 'createdAt'])
+        && data.keys().hasOnly(['employerId', 'talentId', 'tokensSpent', 'createdAt'])
+        && data.employerId == request.auth.uid
+        && isValidId(data.talentId)
+        && unlockId == (request.auth.uid + '_' + data.talentId)
+        && data.tokensSpent == 1
+        && data.createdAt is timestamp;
+    }
+
+    function isValidTokenLedger(data) {
+      return data.keys().hasAll(['employerId', 'delta', 'reason', 'referenceId', 'createdAt'])
+        && data.keys().hasOnly(['employerId', 'delta', 'reason', 'referenceId', 'createdAt'])
+        && data.employerId == request.auth.uid
+        && data.delta is number && data.delta >= -100 && data.delta <= 1000
+        && data.reason is string && data.reason.size() >= 2 && data.reason.size() <= 120
+        && data.referenceId is string && data.referenceId.size() >= 1 && data.referenceId.size() <= 128
+        && data.createdAt is timestamp;
+    }
+
+    function isValidContract(data) {
+      return data.keys().hasAll(['employerId', 'talentId', 'title', 'grossAmountMinor', 'platformFeeMinor', 'netTalentMinor', 'currency', 'escrowProvider', 'escrowStatus', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['opportunityId', 'employerId', 'businessName', 'talentId', 'talentName', 'title', 'scopeSummary', 'grossAmountMinor', 'platformFeeMinor', 'netTalentMinor', 'currency', 'escrowProvider', 'escrowStatus', 'providerPaymentIntentId', 'deliverableUrl', 'deliverableNote', 'createdAt', 'updatedAt'])
+        && isValidId(data.employerId)
+        && isValidId(data.talentId)
+        && data.title is string && data.title.size() >= 3 && data.title.size() <= 160
+        && (!('scopeSummary' in data) || (data.scopeSummary is string && data.scopeSummary.size() <= 1000))
+        && data.grossAmountMinor is number && data.grossAmountMinor > 0
+        && data.platformFeeMinor is number && data.platformFeeMinor >= 0
+        && data.netTalentMinor is number && data.netTalentMinor > 0
+        && (data.platformFeeMinor + data.netTalentMinor == data.grossAmountMinor)
+        && isValidCurrency(data.currency)
+        && data.escrowProvider in ['sandbox_simulator', 'stripe_connect_express', 'regional_psp']
+        && data.escrowStatus in ['pending_funding', 'funded', 'deliverable_submitted', 'released', 'disputed']
+        && (!('providerPaymentIntentId' in data) || (data.providerPaymentIntentId is string && data.providerPaymentIntentId.size() <= 160))
+        && (!('deliverableUrl' in data) || (data.deliverableUrl is string && data.deliverableUrl.size() <= 400))
+        && (!('deliverableNote' in data) || (data.deliverableNote is string && data.deliverableNote.size() <= 1000))
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidCertificate(data, code) {
+      return data.keys().hasAll(['verificationCode', 'contractId', 'talentId', 'talentName', 'employerId', 'businessName', 'projectTitle', 'skillsValidated', 'issuedAt'])
+        && data.keys().hasOnly(['verificationCode', 'contractId', 'talentId', 'talentName', 'employerId', 'businessName', 'projectTitle', 'skillsValidated', 'issuedAt'])
+        && data.verificationCode == code
+        && data.verificationCode is string && data.verificationCode.size() <= 32
+        && data.contractId is string && data.contractId.size() <= 128
+        && data.talentId is string && data.talentId.size() <= 128
+        && data.talentName is string && data.talentName.size() <= 120
+        && data.employerId == request.auth.uid
+        && data.businessName is string && data.businessName.size() <= 140
+        && data.projectTitle is string && data.projectTitle.size() <= 160
+        && data.skillsValidated is list && data.skillsValidated.size() >= 1 && data.skillsValidated.size() <= 5 && data.skillsValidated[0] is string
+        && data.issuedAt is timestamp;
+    }
+
+    function isValidSkillBadge(data) {
+      return data.keys().hasAll(['talentId', 'badgeName', 'careerField', 'earnedFromContractId', 'awardedAt'])
+        && data.keys().hasOnly(['talentId', 'badgeName', 'careerField', 'earnedFromContractId', 'awardedAt'])
+        && isValidId(data.talentId)
+        && data.badgeName is string && data.badgeName.size() >= 2 && data.badgeName.size() <= 100
+        && data.careerField is string && data.careerField.size() >= 2 && data.careerField.size() <= 100
+        && isValidId(data.earnedFromContractId)
+        && data.awardedAt is timestamp;
+    }
+
+    function isValidConversation(data) {
+      return data.keys().hasAll(['employerId', 'talentId', 'lastMessageAt', 'createdAt'])
+        && data.keys().hasOnly(['employerId', 'businessName', 'talentId', 'talentName', 'talentAvatarUrl', 'talentCandidateCode', 'contractId', 'lastMessagePreview', 'lastMessageAt', 'createdAt'])
+        && isValidId(data.employerId)
+        && isValidId(data.talentId)
+        && (!('lastMessagePreview' in data) || (data.lastMessagePreview is string && data.lastMessagePreview.size() <= 240))
+        && data.lastMessageAt is timestamp
+        && data.createdAt is timestamp;
+    }
+
+    function isValidMessage(data) {
+      return data.keys().hasAll(['senderId', 'senderName', 'employerId', 'talentId', 'body', 'createdAt'])
+        && data.keys().hasOnly(['senderId', 'senderName', 'employerId', 'talentId', 'body', 'attachmentUrl', 'sharedContactPayload', 'readAt', 'createdAt'])
+        && data.senderId == request.auth.uid
+        && isValidId(data.employerId)
+        && isValidId(data.talentId)
+        && data.senderName is string && data.senderName.size() <= 120
+        && data.body is string && data.body.size() >= 1 && data.body.size() <= 2000
+        && (!('attachmentUrl' in data) || (data.attachmentUrl is string && data.attachmentUrl.size() <= 400))
+        && data.createdAt is timestamp;
+    }
+
+    function isValidWalletTx(data) {
+      return data.keys().hasAll(['talentId', 'type', 'amountMinor', 'currency', 'status', 'createdAt'])
+        && data.keys().hasOnly(['talentId', 'contractId', 'type', 'description', 'amountMinor', 'currency', 'status', 'payoutDestination', 'createdAt'])
+        && isValidId(data.talentId)
+        && data.type in ['escrow_release', 'platform_fee', 'withdrawal']
+        && data.amountMinor is number && data.amountMinor > 0
+        && isValidCurrency(data.currency)
+        && data.status in ['pending', 'available', 'completed']
+        && (!('description' in data) || (data.description is string && data.description.size() <= 200))
+        && (!('payoutDestination' in data) || (data.payoutDestination is string && data.payoutDestination.size() <= 140))
+        && data.createdAt is timestamp;
+    }
+
+    function isValidSubscription(data) {
+      return data.keys().hasAll(['userId', 'planType', 'status', 'amountMinor', 'currency', 'createdAt'])
+        && data.keys().hasOnly(['userId', 'planType', 'status', 'amountMinor', 'currency', 'currentPeriodEnd', 'providerSubscriptionId', 'createdAt'])
+        && data.userId == request.auth.uid
+        && data.planType in ['talent_premium', 'employer_premium', 'verification_badge']
+        && data.status in ['active', 'cancelled']
+        && data.amountMinor is number && data.amountMinor > 0
+        && isValidCurrency(data.currency)
+        && data.createdAt is timestamp;
+    }
+
+    // 1. Strictly owner-only private PII subcollection
+    match /users/{userId}/private/{docId} {
+      allow get: if isOwner(userId) && isValidId(userId) && isValidId(docId);
+      allow list: if false;
+      allow create: if isVerifiedUser() && isOwner(userId) && isValidId(userId) && isValidId(docId)
+        && isValidUserPrivate(incoming(), userId)
+        && incoming().createdAt == request.time;
+      allow update: if isVerifiedUser() && isOwner(userId) && isValidId(userId) && isValidId(docId)
+        && isValidUserPrivate(incoming(), userId)
+        && incoming().createdAt == existing().createdAt
+        && incoming().userId == existing().userId
+        && incoming().diff(existing()).affectedKeys().hasOnly(['phonePrivate', 'activeMode', 'preferredCurrency', 'preferredLocale', 'themePreference', 'updatedAt'])
+        && incoming().updatedAt == request.time;
+      allow delete: if false;
+    }
+
+    // 2. Blind-safe Talent public discovery profiles (zero PII)
+    match /talent_public/{userId} {
+      allow get: if isSignedIn() && isValidId(userId);
+      allow list: if isSignedIn() && resource.data.firstQuestCompleted == true;
+      allow create: if isVerifiedUser() && isOwner(userId) && isValidId(userId)
+        && isValidTalentPublic(incoming(), userId)
+        && incoming().createdAt == request.time;
+      allow update: if isVerifiedUser() && isValidId(userId)
+        && isValidTalentPublic(incoming(), userId)
+        && isOwner(userId)
+        && incoming().createdAt == existing().createdAt
+        && incoming().userId == existing().userId
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'category', 'educationDetail', 'experienceSummary', 'hasNoFormalExperience',
+          'careerField', 'interests', 'topSkills', 'workModes', 'bootcampHistory',
+          'portfolioUrl', 'linkedinUrl', 'city', 'countryCode', 'lat', 'lng', 'timezone',
+          'expPoints', 'tierLevel', 'firstQuestCompleted', 'isVerified', 'isPremium', 'completedGigsCount', 'updatedAt'
+        ])
+        && incoming().updatedAt == request.time;
+      allow delete: if false;
+    }
+
+    // 3. Talent revealed identities (strictly locked until matching talent_unlocks exists)
+    match /talent_identities/{userId} {
+      allow get: if isSignedIn() && isValidId(userId) && (
+        isOwner(userId) ||
+        exists(/databases/$(database)/documents/talent_unlocks/$(request.auth.uid + '_' + userId))
+      );
+      allow list: if false;
+      allow create: if isVerifiedUser() && isOwner(userId) && isValidId(userId)
+        && isValidTalentIdentity(incoming(), userId)
+        && incoming().updatedAt == request.time;
+      allow update: if isVerifiedUser() && isOwner(userId) && isValidId(userId)
+        && isValidTalentIdentity(incoming(), userId)
+        && incoming().userId == existing().userId
+        && incoming().diff(existing()).affectedKeys().hasOnly(['fullName', 'avatarUrl', 'headline', 'updatedAt'])
+        && incoming().updatedAt == request.time;
+      allow delete: if false;
+    }
+
+    // 4. Employer SME profiles
+    match /employer_profiles/{userId} {
+      allow get: if isSignedIn() && isValidId(userId);
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isVerifiedUser() && isOwner(userId) && isValidId(userId)
+        && isValidEmployerProfile(incoming(), userId)
+        && incoming().tokenBalance == 3
+        && incoming().createdAt == request.time;
+      allow update: if isVerifiedUser() && isOwner(userId) && isValidId(userId)
+        && isValidEmployerProfile(incoming(), userId)
+        && incoming().createdAt == existing().createdAt
+        && incoming().userId == existing().userId
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'businessName', 'industry', 'city', 'countryCode', 'timezone',
+          'tokenBalance', 'isVerified', 'isPremium', 'premiumExpiresAt', 'updatedAt'
+        ])
+        && incoming().updatedAt == request.time;
+      allow delete: if false;
+    }
+
+    // 5. Opportunities (Escrow Gigs + Jobs)
+    match /opportunities/{opportunityId} {
+      allow get: if isSignedIn() && isValidId(opportunityId);
+      allow list: if isSignedIn() && (resource.data.status == 'open' || resource.data.employerId == request.auth.uid);
+      allow create: if isVerifiedUser() && isValidId(opportunityId)
+        && isValidOpportunity(incoming())
+        && incoming().createdAt == request.time
+        && exists(/databases/$(database)/documents/employer_profiles/$(request.auth.uid));
+      allow update: if isVerifiedUser() && isValidId(opportunityId)
+        && isValidOpportunity(incoming())
+        && existing().employerId == request.auth.uid
+        && incoming().employerId == existing().employerId
+        && incoming().createdAt == existing().createdAt
+        && incoming().diff(existing()).affectedKeys().hasOnly(['title', 'description', 'deliverableScope', 'status', 'deadline', 'isPriority', 'updatedAt'])
+        && incoming().updatedAt == request.time;
+      allow delete: if false;
+    }
+
+    // 6. Applications
+    match /applications/{applicationId} {
+      allow get: if isSignedIn() && isValidId(applicationId)
+        && (existing().talentId == request.auth.uid || existing().employerId == request.auth.uid);
+      allow list: if isSignedIn()
+        && (resource.data.talentId == request.auth.uid || resource.data.employerId == request.auth.uid);
+      allow create: if isVerifiedUser() && isValidId(applicationId)
+        && isValidApplication(incoming())
+        && incoming().talentId == request.auth.uid
+        && incoming().status == 'applied'
+        && incoming().createdAt == request.time
+        && exists(/databases/$(database)/documents/opportunities/$(incoming().opportunityId));
+      allow update: if isVerifiedUser() && isValidId(applicationId)
+        && isValidApplication(incoming())
+        && existing().employerId == request.auth.uid
+        && existing().status != 'closed'
+        && incoming().employerId == existing().employerId
+        && incoming().talentId == existing().talentId
+        && incoming().opportunityId == existing().opportunityId
+        && incoming().createdAt == existing().createdAt
+        && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt'])
+        && incoming().updatedAt == request.time;
+      allow delete: if false;
+    }
+
+    // 7. Talent Unlocks
+    match /talent_unlocks/{unlockId} {
+      allow get: if isSignedIn() && isValidId(unlockId)
+        && (existing().employerId == request.auth.uid || existing().talentId == request.auth.uid);
+      allow list: if isSignedIn()
+        && (resource.data.employerId == request.auth.uid || resource.data.talentId == request.auth.uid);
+      allow create: if isVerifiedUser() && isValidId(unlockId)
+        && isValidTalentUnlock(incoming(), unlockId)
+        && incoming().createdAt == request.time
+        && exists(/databases/$(database)/documents/employer_profiles/$(request.auth.uid));
+      allow update, delete: if false;
+    }
+
+    // 8. Token Ledger (append-only)
+    match /token_ledger/{entryId} {
+      allow get: if isSignedIn() && isValidId(entryId) && existing().employerId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.employerId == request.auth.uid;
+      allow create: if isVerifiedUser() && isValidId(entryId)
+        && isValidTokenLedger(incoming())
+        && incoming().createdAt == request.time;
+      allow update, delete: if false;
+    }
+
+    // 9. Escrow Contracts (terminal lock when released)
+    match /contracts/{contractId} {
+      allow get: if isSignedIn() && isValidId(contractId)
+        && (existing().employerId == request.auth.uid || existing().talentId == request.auth.uid);
+      allow list: if isSignedIn()
+        && (resource.data.employerId == request.auth.uid || resource.data.talentId == request.auth.uid);
+      allow create: if isVerifiedUser() && isValidId(contractId)
+        && isValidContract(incoming())
+        && incoming().employerId == request.auth.uid
+        && incoming().escrowStatus in ['pending_funding', 'funded']
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isVerifiedUser() && isValidId(contractId)
+        && isValidContract(incoming())
+        && existing().escrowStatus != 'released'
+        && incoming().employerId == existing().employerId
+        && incoming().talentId == existing().talentId
+        && incoming().grossAmountMinor == existing().grossAmountMinor
+        && incoming().platformFeeMinor == existing().platformFeeMinor
+        && incoming().netTalentMinor == existing().netTalentMinor
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          (existing().employerId == request.auth.uid
+            && incoming().diff(existing()).affectedKeys().hasOnly(['escrowStatus', 'providerPaymentIntentId', 'updatedAt'])) ||
+          (existing().talentId == request.auth.uid
+            && existing().escrowStatus == 'funded'
+            && incoming().escrowStatus == 'deliverable_submitted'
+            && incoming().diff(existing()).affectedKeys().hasOnly(['escrowStatus', 'deliverableUrl', 'deliverableNote', 'updatedAt']))
+        );
+      allow delete: if false;
+    }
+
+    // 10. Verifiable Certificates (public get by exact code, owner-only list)
+    match /certificates/{verificationCode} {
+      allow get: if isValidId(verificationCode);
+      allow list: if isSignedIn()
+        && (resource.data.talentId == request.auth.uid || resource.data.employerId == request.auth.uid);
+      allow create: if isVerifiedUser() && isValidId(verificationCode)
+        && isValidCertificate(incoming(), verificationCode)
+        && incoming().issuedAt == request.time
+        && exists(/databases/$(database)/documents/contracts/$(incoming().contractId))
+        && get(/databases/$(database)/documents/contracts/$(incoming().contractId)).data.employerId == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    // 11. Skill Badges (tied to verified contract)
+    match /skill_badges/{badgeId} {
+      allow get: if isSignedIn() && isValidId(badgeId);
+      allow list: if isSignedIn() && resource.data.talentId == request.auth.uid;
+      allow create: if isVerifiedUser() && isValidId(badgeId)
+        && isValidSkillBadge(incoming())
+        && incoming().awardedAt == request.time
+        && exists(/databases/$(database)/documents/contracts/$(incoming().earnedFromContractId))
+        && get(/databases/$(database)/documents/contracts/$(incoming().earnedFromContractId)).data.employerId == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    // 12. Conversations and Messages (Master Gate + cost-safe list)
+    match /conversations/{conversationId} {
+      allow get: if isSignedIn() && isValidId(conversationId)
+        && (existing().employerId == request.auth.uid || existing().talentId == request.auth.uid);
+      allow list: if isSignedIn()
+        && (resource.data.employerId == request.auth.uid || resource.data.talentId == request.auth.uid);
+      allow create: if isVerifiedUser() && isValidId(conversationId)
+        && isValidConversation(incoming())
+        && incoming().employerId == request.auth.uid
+        && incoming().createdAt == request.time
+        && incoming().lastMessageAt == request.time;
+      allow update: if isVerifiedUser() && isValidId(conversationId)
+        && isValidConversation(incoming())
+        && (existing().employerId == request.auth.uid || existing().talentId == request.auth.uid)
+        && incoming().employerId == existing().employerId
+        && incoming().talentId == existing().talentId
+        && incoming().createdAt == existing().createdAt
+        && incoming().diff(existing()).affectedKeys().hasOnly(['contractId', 'lastMessagePreview', 'lastMessageAt'])
+        && incoming().lastMessageAt == request.time;
+      allow delete: if false;
+
+      match /messages/{messageId} {
+        allow get: if isSignedIn() && isValidId(conversationId) && isValidId(messageId)
+          && (existing().employerId == request.auth.uid || existing().talentId == request.auth.uid);
+        allow list: if isSignedIn()
+          && (resource.data.employerId == request.auth.uid || resource.data.talentId == request.auth.uid);
+        allow create: if isVerifiedUser() && isValidId(conversationId) && isValidId(messageId)
+          && isValidMessage(incoming())
+          && incoming().createdAt == request.time
+          && get(/databases/$(database)/documents/conversations/$(conversationId)).data.employerId == incoming().employerId
+          && get(/databases/$(database)/documents/conversations/$(conversationId)).data.talentId == incoming().talentId
+          && (incoming().employerId == request.auth.uid || incoming().talentId == request.auth.uid);
+        allow update, delete: if false;
+      }
+    }
+
+    // 13. Wallet Transactions
+    match /wallet_transactions/{txId} {
+      allow get: if isSignedIn() && isValidId(txId) && existing().talentId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.talentId == request.auth.uid;
+      allow create: if isVerifiedUser() && isValidId(txId)
+        && isValidWalletTx(incoming())
+        && incoming().createdAt == request.time
+        && (
+          (incoming().talentId == request.auth.uid && incoming().type == 'withdrawal') ||
+          (incoming().type == 'escrow_release' && 'contractId' in incoming()
+            && get(/databases/$(database)/documents/contracts/$(incoming().contractId)).data.employerId == request.auth.uid)
+        );
+      allow update, delete: if false;
+    }
+
+    // 14. Subscriptions
+    match /subscriptions/{subId} {
+      allow get: if isSignedIn() && isValidId(subId) && existing().userId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isVerifiedUser() && isValidId(subId)
+        && isValidSubscription(incoming())
+        && incoming().createdAt == request.time;
+      allow update: if isVerifiedUser() && isValidId(subId)
+        && isValidSubscription(incoming())
+        && existing().userId == request.auth.uid
+        && incoming().userId == existing().userId
+        && incoming().createdAt == existing().createdAt
+        && incoming().diff(existing()).affectedKeys().hasOnly(['status']);
+      allow delete: if false;
+    }
+  }
+}

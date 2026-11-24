@@ -1,0 +1,25 @@
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "rewrites": [
+    { "source": "/api/health", "destination": "/api/health" },
+    { "source": "/api/workspace/preferences", "destination": "/api/workspace/preferences" },
+    { "source": "/api/workspace", "destination": "/api/workspace" },
+    { "source": "/api/talent/first-quest", "destination": "/api/talent/first-quest" },
+    { "source": "/api/talent/profile", "destination": "/api/talent/profile" },
+    { "source": "/api/employer/profile", "destination": "/api/employer/profile" },
+    { "source": "/api/employer/unlock-talent", "destination": "/api/employer/unlock-talent" },
+    { "source": "/api/employer/opportunities", "destination": "/api/employer/opportunities" },
+    { "source": "/api/opportunities/:id/apply", "destination": "/api/opportunities/[id]/apply" },
+    { "source": "/api/applications/:id/status", "destination": "/api/applications/[id]/status" },
+    { "source": "/api/contracts/fund", "destination": "/api/contracts/fund" },
+    { "source": "/api/contracts/:id/deliverable", "destination": "/api/contracts/[id]/deliverable" },
+    { "source": "/api/contracts/:id/release", "destination": "/api/contracts/[id]/release" },
+    { "source": "/api/wallet/withdraw", "destination": "/api/wallet/withdraw" },
+    { "source": "/api/billing/tokens", "destination": "/api/billing/tokens" },
+    { "source": "/api/billing/subscription", "destination": "/api/billing/subscription" },
+    { "source": "/api/conversations/:id/messages", "destination": "/api/conversations/[id]/messages" },
+    { "source": "/api/certificates/:code", "destination": "/api/certificates/[code]" },
+    { "source": "/((?!api/).*)", "destination": "/index.html" }
+  ]
+}

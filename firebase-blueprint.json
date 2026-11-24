@@ -1,0 +1,321 @@
+{
+  "entities": {
+    "UserPrivateInfo": {
+      "title": "UserPrivateInfo",
+      "description": "Strictly private PII for an authenticated user (email, phone, active workspace preferences).",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "email": { "type": "string", "format": "email", "maxLength": 200 },
+        "phonePrivate": { "type": "string", "maxLength": 40 },
+        "activeMode": { "type": "string", "enum": ["talent", "employer"] },
+        "preferredCurrency": { "type": "string", "enum": ["USD", "IDR", "EUR", "GBP", "SGD"] },
+        "preferredLocale": { "type": "string", "enum": ["en", "id"] },
+        "themePreference": { "type": "string", "enum": ["light", "dark"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "email", "activeMode", "preferredCurrency", "preferredLocale", "createdAt"]
+    },
+    "TalentPublic": {
+      "title": "TalentPublic",
+      "description": "Blind-safe talent discovery document without real name, real avatar, or private phone.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "candidateCode": { "type": "string", "maxLength": 24 },
+        "category": { "type": "string", "maxLength": 80 },
+        "educationDetail": { "type": "string", "maxLength": 200 },
+        "experienceSummary": { "type": "string", "maxLength": 500 },
+        "hasNoFormalExperience": { "type": "boolean" },
+        "careerField": { "type": "string", "maxLength": 100 },
+        "interests": { "type": "array" },
+        "topSkills": { "type": "array" },
+        "workModes": { "type": "array" },
+        "bootcampHistory": { "type": "string", "maxLength": 240 },
+        "portfolioUrl": { "type": "string", "maxLength": 300 },
+        "city": { "type": "string", "maxLength": 80 },
+        "countryCode": { "type": "string", "maxLength": 8 },
+        "timezone": { "type": "string", "maxLength": 32 },
+        "expPoints": { "type": "number" },
+        "tierLevel": { "type": "number" },
+        "firstQuestCompleted": { "type": "boolean" },
+        "isVerified": { "type": "boolean" },
+        "isPremium": { "type": "boolean" },
+        "completedGigsCount": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "candidateCode", "category", "careerField", "topSkills", "expPoints", "tierLevel", "firstQuestCompleted", "createdAt"]
+    },
+    "TalentIdentity": {
+      "title": "TalentIdentity",
+      "description": "Revealed identity document accessible only to the owner or an employer with a matching talent_unlocks document.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "fullName": { "type": "string", "maxLength": 120 },
+        "avatarUrl": { "type": "string", "maxLength": 500 },
+        "headline": { "type": "string", "maxLength": 160 },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "fullName", "updatedAt"]
+    },
+    "EmployerProfile": {
+      "title": "EmployerProfile",
+      "description": "Employer SME profile and token balance.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "businessName": { "type": "string", "maxLength": 140 },
+        "industry": { "type": "string", "maxLength": 100 },
+        "city": { "type": "string", "maxLength": 80 },
+        "countryCode": { "type": "string", "maxLength": 8 },
+        "timezone": { "type": "string", "maxLength": 32 },
+        "tokenBalance": { "type": "number" },
+        "isVerified": { "type": "boolean" },
+        "isPremium": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "businessName", "industry", "tokenBalance", "createdAt"]
+    },
+    "Opportunity": {
+      "title": "Opportunity",
+      "description": "Escrow Gig or Part-Time/Full-Time Job published by an employer.",
+      "type": "object",
+      "properties": {
+        "employerId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "businessName": { "type": "string", "maxLength": 140 },
+        "opportunityType": { "type": "string", "enum": ["escrow_gig", "part_time", "full_time"] },
+        "title": { "type": "string", "maxLength": 160 },
+        "description": { "type": "string", "maxLength": 2000 },
+        "deliverableScope": { "type": "string", "maxLength": 1000 },
+        "careerField": { "type": "string", "maxLength": 100 },
+        "workMode": { "type": "string", "enum": ["remote", "onsite", "hybrid"] },
+        "city": { "type": "string", "maxLength": 80 },
+        "timezone": { "type": "string", "maxLength": 32 },
+        "budgetMinor": { "type": "number" },
+        "currency": { "type": "string", "enum": ["USD", "IDR", "EUR", "GBP", "SGD"] },
+        "deadline": { "type": "string", "maxLength": 40 },
+        "isPriority": { "type": "boolean" },
+        "status": { "type": "string", "enum": ["open", "closed", "filled"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["employerId", "businessName", "opportunityType", "title", "careerField", "workMode", "budgetMinor", "currency", "status", "createdAt"]
+    },
+    "Application": {
+      "title": "Application",
+      "description": "Talent application to an opportunity with deterministic ID opportunityId_talentId.",
+      "type": "object",
+      "properties": {
+        "opportunityId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "employerId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "talentId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "pitch": { "type": "string", "maxLength": 1500 },
+        "portfolioLink": { "type": "string", "maxLength": 300 },
+        "status": { "type": "string", "enum": ["applied", "shortlisted", "hired", "closed"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["opportunityId", "employerId", "talentId", "pitch", "status", "createdAt"]
+    },
+    "TalentUnlock": {
+      "title": "TalentUnlock",
+      "description": "Record that an employer spent 1 Token to reveal a talent's identity.",
+      "type": "object",
+      "properties": {
+        "employerId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "talentId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "tokensSpent": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["employerId", "talentId", "tokensSpent", "createdAt"]
+    },
+    "TokenLedger": {
+      "title": "TokenLedger",
+      "description": "Immutable token balance ledger entry.",
+      "type": "object",
+      "properties": {
+        "employerId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "delta": { "type": "number" },
+        "reason": { "type": "string", "maxLength": 120 },
+        "referenceId": { "type": "string", "maxLength": 128 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["employerId", "delta", "reason", "referenceId", "createdAt"]
+    },
+    "Contract": {
+      "title": "Contract",
+      "description": "Escrow contract between an employer and talent with 10% platform admin fee.",
+      "type": "object",
+      "properties": {
+        "opportunityId": { "type": "string", "maxLength": 128 },
+        "employerId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "talentId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "title": { "type": "string", "maxLength": 160 },
+        "scopeSummary": { "type": "string", "maxLength": 1000 },
+        "grossAmountMinor": { "type": "number" },
+        "platformFeeMinor": { "type": "number" },
+        "netTalentMinor": { "type": "number" },
+        "currency": { "type": "string", "enum": ["USD", "IDR", "EUR", "GBP", "SGD"] },
+        "escrowProvider": { "type": "string", "enum": ["sandbox_simulator", "stripe_connect_express", "regional_psp"] },
+        "escrowStatus": { "type": "string", "enum": ["pending_funding", "funded", "deliverable_submitted", "released", "disputed"] },
+        "providerPaymentIntentId": { "type": "string", "maxLength": 160 },
+        "deliverableUrl": { "type": "string", "maxLength": 400 },
+        "deliverableNote": { "type": "string", "maxLength": 1000 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["employerId", "talentId", "title", "grossAmountMinor", "platformFeeMinor", "netTalentMinor", "currency", "escrowProvider", "escrowStatus", "createdAt", "updatedAt"]
+    },
+    "Certificate": {
+      "title": "Certificate",
+      "description": "Publicly verifiable completion certificate keyed by verificationCode.",
+      "type": "object",
+      "properties": {
+        "verificationCode": { "type": "string", "maxLength": 32, "pattern": "^TIMU-[0-9]{4}-[A-Z0-9]{6}$" },
+        "contractId": { "type": "string", "maxLength": 128 },
+        "talentId": { "type": "string", "maxLength": 128 },
+        "talentName": { "type": "string", "maxLength": 120 },
+        "employerId": { "type": "string", "maxLength": 128 },
+        "businessName": { "type": "string", "maxLength": 140 },
+        "projectTitle": { "type": "string", "maxLength": 160 },
+        "skillsValidated": { "type": "array" },
+        "issuedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["verificationCode", "contractId", "talentId", "talentName", "employerId", "businessName", "projectTitle", "skillsValidated", "issuedAt"]
+    },
+    "SkillBadge": {
+      "title": "SkillBadge",
+      "description": "Domain skill badge earned upon Escrow payout completion.",
+      "type": "object",
+      "properties": {
+        "talentId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "badgeName": { "type": "string", "maxLength": 100 },
+        "careerField": { "type": "string", "maxLength": 100 },
+        "earnedFromContractId": { "type": "string", "maxLength": 128 },
+        "awardedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["talentId", "badgeName", "careerField", "earnedFromContractId", "awardedAt"]
+    },
+    "Conversation": {
+      "title": "Conversation",
+      "description": "Direct messaging thread between an unlocked talent and employer.",
+      "type": "object",
+      "properties": {
+        "employerId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "talentId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "contractId": { "type": "string", "maxLength": 128 },
+        "lastMessagePreview": { "type": "string", "maxLength": 240 },
+        "lastMessageAt": { "type": "string", "format": "date-time" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["employerId", "talentId", "lastMessageAt", "createdAt"]
+    },
+    "Message": {
+      "title": "Message",
+      "description": "Individual chat message inside a conversation subcollection.",
+      "type": "object",
+      "properties": {
+        "senderId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "senderName": { "type": "string", "maxLength": 120 },
+        "body": { "type": "string", "maxLength": 2000 },
+        "attachmentUrl": { "type": "string", "maxLength": 400 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["senderId", "senderName", "body", "createdAt"]
+    },
+    "WalletTransaction": {
+      "title": "WalletTransaction",
+      "description": "Talent wallet credit or withdrawal entry.",
+      "type": "object",
+      "properties": {
+        "talentId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "contractId": { "type": "string", "maxLength": 128 },
+        "type": { "type": "string", "enum": ["escrow_release", "platform_fee", "withdrawal"] },
+        "amountMinor": { "type": "number" },
+        "currency": { "type": "string", "enum": ["USD", "IDR", "EUR", "GBP", "SGD"] },
+        "status": { "type": "string", "enum": ["pending", "available", "completed"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["talentId", "type", "amountMinor", "currency", "status", "createdAt"]
+    },
+    "Subscription": {
+      "title": "Subscription",
+      "description": "Active Premium or Verification Badge subscription.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "planType": { "type": "string", "enum": ["talent_premium", "employer_premium", "verification_badge"] },
+        "status": { "type": "string", "enum": ["active", "cancelled"] },
+        "amountMinor": { "type": "number" },
+        "currency": { "type": "string", "enum": ["USD", "IDR", "EUR", "GBP", "SGD"] },
+        "currentPeriodEnd": { "type": "string", "format": "date-time" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "planType", "status", "amountMinor", "currency", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}/private/{docId}": {
+      "schema": { "$ref": "#/entities/UserPrivateInfo" },
+      "description": "Strictly owner-only PII document storing email, phonePrivate, and settings."
+    },
+    "/talent_public/{userId}": {
+      "schema": { "$ref": "#/entities/TalentPublic" },
+      "description": "Blind-safe talent discovery cards containing skills, education, tier, and timezone without PII."
+    },
+    "/talent_identities/{userId}": {
+      "schema": { "$ref": "#/entities/TalentIdentity" },
+      "description": "Talent real name and avatar, readable only by owner or an employer with a matching talent_unlocks document."
+    },
+    "/employer_profiles/{userId}": {
+      "schema": { "$ref": "#/entities/EmployerProfile" },
+      "description": "Employer SME business profile and token balance."
+    },
+    "/opportunities/{opportunityId}": {
+      "schema": { "$ref": "#/entities/Opportunity" },
+      "description": "Published Escrow Gigs and Part-Time/Full-Time Jobs."
+    },
+    "/applications/{applicationId}": {
+      "schema": { "$ref": "#/entities/Application" },
+      "description": "Talent job/gig applications keyed by opportunityId_talentId."
+    },
+    "/talent_unlocks/{unlockId}": {
+      "schema": { "$ref": "#/entities/TalentUnlock" },
+      "description": "Token unlock receipts keyed by employerId_talentId."
+    },
+    "/token_ledger/{entryId}": {
+      "schema": { "$ref": "#/entities/TokenLedger" },
+      "description": "Immutable employer token credit/debit ledger."
+    },
+    "/contracts/{contractId}": {
+      "schema": { "$ref": "#/entities/Contract" },
+      "description": "Escrow contracts with gross/fee/net breakdown and deliverable status."
+    },
+    "/certificates/{verificationCode}": {
+      "schema": { "$ref": "#/entities/Certificate" },
+      "description": "Publicly verifiable completion certificates keyed by verification code."
+    },
+    "/skill_badges/{badgeId}": {
+      "schema": { "$ref": "#/entities/SkillBadge" },
+      "description": "Earned domain skill badges awarded on Escrow completion."
+    },
+    "/conversations/{conversationId}": {
+      "schema": { "$ref": "#/entities/Conversation" },
+      "description": "Employer-Talent messaging rooms."
+    },
+    "/conversations/{conversationId}/messages/{messageId}": {
+      "schema": { "$ref": "#/entities/Message" },
+      "description": "Messages inside an employer-talent conversation."
+    },
+    "/wallet_transactions/{txId}": {
+      "schema": { "$ref": "#/entities/WalletTransaction" },
+      "description": "Talent wallet credits and withdrawal records."
+    },
+    "/subscriptions/{subId}": {
+      "schema": { "$ref": "#/entities/Subscription" },
+      "description": "User Premium and Verification Badge subscriptions."
+    }
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "name": "TIMU (Titik Temu)",
+  "description": "Escrow-backed peer-to-peer talent and SME marketplace with blind skill-first discovery, verifiable skill credentials, and protected milestone payouts.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

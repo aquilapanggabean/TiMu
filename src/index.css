@@ -1,0 +1,259 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
+
+:root,
+[data-theme="light"] {
+  color-scheme: light;
+
+  /* Surfaces */
+  --bg-canvas: #FAFBF6;
+  --bg-surface: #FFFFFF;
+  --bg-subtle: #EEF3E3;
+  --bg-elevated: #FFFFFF;
+
+  /* Borders */
+  --border-subtle: #E3E9D6;
+  --border-default: #E3E9D6;
+  --border-strong: #B8C79B;
+
+  /* Typography */
+  --text-primary: #1B2408;   /* 16.12:1 on #FFFFFF, 15.50:1 on #FAFBF6 */
+  --text-secondary: #4E5B31; /* 7.33:1 on #FFFFFF, 7.05:1 on #FAFBF6 */
+  --text-inverse: #FFFFFF;
+
+  /* Brand Olive */
+  --brand-primary: #3B4D0C;       /* 9.32:1 with #FFFFFF */
+  --brand-primary-hover: #2E3D09;
+  --brand-primary-text: #FFFFFF;
+  --brand-wallet: #233008;        /* 14.02:1 with #FFFFFF, 10.17:1 with #D5E0BE */
+  --brand-wallet-muted: #D5E0BE;
+  --brand-fresh: #8AA624;         /* Accent/progress/rings only, never behind white text */
+  --brand-mid: #8AA624;
+  --brand-soft: #EEF3E3;
+
+  /* Conversion Accent Gold */
+  --accent-gold: #FEA405;         /* 8.08:1 with #1B2408 */
+  --accent-gold-hover: #E89300;
+  --accent-gold-text: #1B2408;
+  --accent-gold-soft: #FEF3C7;
+  --accent-gold-soft-text: #854D0E; /* 6.15:1 on #FEF3C7 */
+
+  /* Semantic Status */
+  --status-success-bg: #ECFDF3;
+  --status-success-text: #166534;
+  --status-error-bg: #FEF3F2;
+  --status-error-text: #B42318;
+  --status-info-bg: #EEF5FC;
+  --status-info-text: #1D4E89;
+
+  /* Focus Ring */
+  --focus-ring: #FEA405;
+
+  /* Selective Elevation */
+  --shadow-card: 0 12px 32px -12px rgba(27, 36, 8, 0.12);
+  --shadow-modal: 0 24px 56px -14px rgba(27, 36, 8, 0.22);
+  --shadow-nav: 0 -4px 20px rgba(27, 36, 8, 0.06);
+}
+
+[data-theme="dark"],
+.dark {
+  color-scheme: dark;
+
+  /* Surfaces */
+  --bg-canvas: #0F1407;
+  --bg-surface: #18200C;
+  --bg-subtle: #222D12;
+  --bg-elevated: #1E290E;
+
+  /* Borders */
+  --border-subtle: #2E3C19;
+  --border-default: #2E3C19;
+  --border-strong: #4B6127;
+
+  /* Typography */
+  --text-primary: #F3F6EC;   /* 15.35:1 on #18200C */
+  --text-secondary: #B3C09A; /* 8.73:1 on #18200C */
+  --text-inverse: #0F1407;
+
+  /* Brand Olive */
+  --brand-primary: #A3C23A;       /* 9.20:1 with #0F1407 */
+  --brand-primary-hover: #B4D34B;
+  --brand-primary-text: #0F1407;
+  --brand-wallet: #1E290E;
+  --brand-wallet-muted: #C7D4AE;
+  --brand-fresh: #8AA624;
+  --brand-mid: #8AA624;
+  --brand-soft: #222D12;
+
+  /* Conversion Accent Gold */
+  --accent-gold: #FEA405;         /* 9.37:1 with #0F1407 */
+  --accent-gold-hover: #FFB633;
+  --accent-gold-text: #0F1407;
+  --accent-gold-soft: #332609;
+  --accent-gold-soft-text: #FCD34D; /* 10.24:1 on #332609 */
+
+  /* Semantic Status */
+  --status-success-bg: #132E1A;
+  --status-success-text: #7CE095;
+  --status-error-bg: #3A1512;
+  --status-error-text: #FDA29B;
+  --status-info-bg: #11263D;
+  --status-info-text: #8FC4FF;
+
+  /* Focus Ring */
+  --focus-ring: #FEA405;
+
+  /* Selective Elevation */
+  --shadow-card: 0 14px 36px -12px rgba(0, 0, 0, 0.5);
+  --shadow-modal: 0 24px 60px -12px rgba(0, 0, 0, 0.72);
+  --shadow-nav: 0 -4px 20px rgba(0, 0, 0, 0.42);
+}
+
+@theme {
+  --color-canvas: var(--bg-canvas);
+  --color-surface: var(--bg-surface);
+  --color-subtle: var(--bg-subtle);
+  --color-elevated: var(--bg-elevated);
+  --color-ink: var(--text-primary);
+  --color-muted: var(--text-secondary);
+  --color-inverse: var(--text-inverse);
+
+  --color-brand: var(--brand-primary);
+  --color-brand-hover: var(--brand-primary-hover);
+  --color-brand-fg: var(--brand-primary-text);
+  --color-wallet: var(--brand-wallet);
+  --color-wallet-muted: var(--brand-wallet-muted);
+  --color-brand-fresh: var(--brand-fresh);
+  --color-brand-mid: var(--brand-mid);
+  --color-brand-soft: var(--brand-soft);
+
+  --color-gold: var(--accent-gold);
+  --color-gold-hover: var(--accent-gold-hover);
+  --color-gold-fg: var(--accent-gold-text);
+  --color-gold-soft: var(--accent-gold-soft);
+  --color-gold-soft-fg: var(--accent-gold-soft-text);
+
+  --color-line-subtle: var(--border-subtle);
+  --color-line: var(--border-default);
+  --color-line-strong: var(--border-strong);
+
+  --color-status-success-bg: var(--status-success-bg);
+  --color-status-success-text: var(--status-success-text);
+  --color-status-error-bg: var(--status-error-bg);
+  --color-status-error-text: var(--status-error-text);
+  --color-status-info-bg: var(--status-info-bg);
+  --color-status-info-text: var(--status-info-text);
+
+  --font-display: "Bricolage Grotesque", system-ui, sans-serif;
+  --font-sans: "Plus Jakarta Sans", system-ui, sans-serif;
+
+  --shadow-card: var(--shadow-card);
+  --shadow-modal: var(--shadow-modal);
+  --shadow-nav: var(--shadow-nav);
+}
+
+@layer base {
+  html {
+    font-family: var(--font-sans);
+    background-color: var(--bg-canvas);
+    color: var(--text-primary);
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2 {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+  }
+
+  /* Pointer affordance on all interactive controls */
+  button:not(:disabled),
+  a[href],
+  select:not(:disabled),
+  label[for],
+  [role="button"]:not([aria-disabled="true"]),
+  [role="tab"],
+  [role="radio"] {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  [aria-disabled="true"] {
+    cursor: not-allowed;
+    opacity: 0.48;
+  }
+
+  /* Visible 2px harvest-gold focus ring across Light and Dark modes */
+  :focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+  }
+}
+
+.type-display {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(2rem, 1.35rem + 2.2vw, 3.125rem);
+  line-height: 1.08;
+  letter-spacing: -0.025em;
+  text-wrap: balance;
+}
+
+.type-h1 {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(1.625rem, 1.3rem + 1.1vw, 2.25rem);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+.type-h2 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(1.125rem, 1rem + 0.5vw, 1.375rem);
+  line-height: 1.25;
+  letter-spacing: -0.015em;
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Subtle skeleton shimmer obeying reduced motion */
+@keyframes timu-skeleton-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+.skeleton-block {
+  background-color: var(--bg-subtle);
+  animation: timu-skeleton-pulse 1.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: #FFFFFF !important;
+    color: #1B2408 !important;
+  }
+}
