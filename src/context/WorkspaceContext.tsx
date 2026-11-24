@@ -1,7 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { onAuthStateChanged, signInWithPopup, signOut, type User } from 'firebase/auth';
+import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
 import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
-import { auth, db, googleAuthProvider, handleFirestoreError, OperationType } from '../lib/firebase';
+import { auth, db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { getDictionary, type Dictionary } from '../lib/i18n';
 import { localWorkspaceEngine } from '../lib/localWorkspaceEngine';
 import type {
@@ -39,6 +39,7 @@ interface PaymentProvidersSummary {
 
 interface WorkspaceContextValue {
   firebaseUser: User | null;
+  accountEmail: string | null;
   authReady: boolean;
   isDemoWorkspace: boolean;
   demoBannerDismissed: boolean;
@@ -75,7 +76,11 @@ interface WorkspaceContextValue {
 
   activeMode: WorkspaceMode;
   switchMode: (mode: WorkspaceMode) => Promise<void>;
-  signInWithGoogle: (initialMode?: WorkspaceMode) => Promise<boolean>;
+  signInWithAccount: (payload: {
+    fullName?: string;
+    email: string;
+    role?: WorkspaceMode;
+  }) => Promise<boolean>;
   enterDemoWorkspace: (mode: WorkspaceMode) => void;
   logout: () => Promise<void>;
 
@@ -166,6 +171,16 @@ async function fetchJsonSafe(input: RequestInfo | URL, init?: RequestInit): Prom
 
 export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [firebaseUser, setFirebaseUser] = useState<User | null>(null);
+  const [accountEmail, setAccountEmail] = useState<string | null>(() => {
+    try {
+      const raw = localStorage.getItem('timu_account_v1');
+      if (!raw) return null;
+      const parsed = JSON.parse(raw) as { email?: string };
+      return typeof parsed.email === 'string' && parsed.email.includes('@') ? parsed.email : null;
+    } catch {
+      return null;
+    }
+  });
   const [authReady, setAuthReady] = useState(false);
   const [sessionId, setSessionId] = useState<string>(() => getOrCreateSessionId());
   const [demoBannerDismissed, setDemoBannerDismissed] = useState(false);
@@ -468,25 +483,67 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     [activeSessionKey, apiHeaders]
   );
 
-  const signInWithGoogle = useCallback(async (initialMode: WorkspaceMode = 'talent') => {
-    try {
-      const cred = await signInWithPopup(auth, googleAuthProvider);
-      setFirebaseUser(cred.user);
-      setSessionId(cred.user.uid);
-      if (backendModeRef.current === 'remote') {
-        await fetch('/api/workspace/preferences', {
+  const signInWithAccount = useCallback(
+    async (payload: { fullName?: string; email: string; role?: WorkspaceMode }) => {
+      const normalizedEmail = payload.email.trim().toLowerCase();
+      if (!normalizedEmail.includes('@')) return false;
+      const initialMode: WorkspaceMode = payload.role || 'talent';
+      const fallbackName = normalizedEmail
+        .split('@')[0]
+        .replace(/[._-]+/g, ' ')
+        .replace(/\b\w/g, (ch) => ch.toUpperCase());
+      const resolvedName = (payload.fullName || '').trim() || fallbackName || 'TIMU Member';
+
+      try {
+        localStorage.setItem(
+          'timu_account_v1',
+          JSON.stringify({ email: normalizedEmail, fullName: resolvedName })
+        );
+      } catch {
+        // ignore storage errors
+      }
+      setAccountEmail(normalizedEmail);
+      setProfile((prev) =>
+        prev
+          ? { ...prev, fullName: resolvedName, email: normalizedEmail, activeMode: initialMode }
+          : prev
+      );
+
+      if (backendModeRef.current === 'local') {
+        localWorkspaceEngine.updateActiveMode(activeSessionKey, initialMode);
+        if (profile && talentProfile) {
+          const updated = localWorkspaceEngine.saveTalentProfile(activeSessionKey, {
+            fullName: resolvedName,
+            educationDetail: talentProfile.educationDetail,
+            experienceSummary: talentProfile.experienceSummary,
+            bootcampHistory: talentProfile.bootcampHistory,
+            portfolioUrl: talentProfile.portfolioUrl,
+            linkedinUrl: talentProfile.linkedinUrl,
+            city: profile.city,
+            timezone: profile.timezone,
+          });
+          setProfile({ ...updated.profile, email: normalizedEmail, activeMode: initialMode });
+          setTalentProfile(updated.talentProfile);
+        }
+        return true;
+      }
+
+      try {
+        const res = await fetchJsonSafe('/api/workspace/preferences', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'x-timu-session': cred.user.uid },
+          headers: apiHeaders(),
           body: JSON.stringify({ activeMode: initialMode }),
-        }).catch(() => undefined);
-      } else {
-        localWorkspaceEngine.updateActiveMode(cred.user.uid, initialMode);
+        });
+        if (res.ok && res.isJson && res.data?.profile) {
+          setProfile({ ...res.data.profile, fullName: resolvedName, email: normalizedEmail });
+        }
+      } catch {
+        localWorkspaceEngine.updateActiveMode(activeSessionKey, initialMode);
       }
       return true;
-    } catch {
-      return false;
-    }
-  }, []);
+    },
+    [activeSessionKey, apiHeaders, profile, talentProfile]
+  );
 
   const enterDemoWorkspace = useCallback(
     (mode: WorkspaceMode) => {
@@ -501,7 +558,13 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     } catch {
       // ignore if not signed into firebase
     }
+    try {
+      localStorage.removeItem('timu_account_v1');
+    } catch {
+      // ignore storage errors
+    }
     setFirebaseUser(null);
+    setAccountEmail(null);
   }, []);
 
   const completeFirstQuest = useCallback(
@@ -1064,8 +1127,9 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const value: WorkspaceContextValue = {
     firebaseUser,
+    accountEmail,
     authReady,
-    isDemoWorkspace: !firebaseUser,
+    isDemoWorkspace: !firebaseUser && !accountEmail,
     demoBannerDismissed,
     dismissDemoBanner: () => setDemoBannerDismissed(true),
     loading,
@@ -1097,7 +1161,7 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     paymentProviders,
     activeMode,
     switchMode,
-    signInWithGoogle,
+    signInWithAccount,
     enterDemoWorkspace,
     logout,
     completeFirstQuest,

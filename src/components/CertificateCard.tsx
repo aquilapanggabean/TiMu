@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Award, Check, Copy, Printer, ShieldCheck } from 'lucide-react';
 import type { VerifiableCertificate } from '../types/timu';
 import { useWorkspace } from '../context/WorkspaceContext';
+import { TimuLogo } from './TimuLogo';
 
 interface CertificateCardProps {
   certificate: VerifiableCertificate;
@@ -41,15 +42,14 @@ export const CertificateCard: React.FC<CertificateCardProps> = ({
       <div className="rounded-xl border border-line p-6 sm:p-8 space-y-6">
         {/* Document Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-line-subtle pb-5">
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand text-brand-fg shrink-0">
-              <Award className="h-5 w-5" aria-hidden="true" />
-            </div>
-            <div>
-              <div className="font-display text-lg font-extrabold tracking-tight text-ink">
-                TIMU (Titik Temu)
+          <div className="flex items-center gap-3.5">
+            <TimuLogo size="sm" />
+            <div className="border-l border-line pl-3.5">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-ink">
+                <Award className="h-3.5 w-3.5 text-brand shrink-0" aria-hidden="true" />
+                <span>{dict.certificate.pageTitle}</span>
               </div>
-              <div className="text-xs font-semibold text-muted">{dict.certificate.pageTitle}</div>
+              <div className="text-[11px] font-medium text-muted">Titik Temu Escrow Credential</div>
             </div>
           </div>
 

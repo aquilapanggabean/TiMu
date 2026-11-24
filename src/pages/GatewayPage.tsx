@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   ArrowRight,
@@ -55,12 +55,11 @@ export const GatewayPage: React.FC = () => {
     theme,
     toggleTheme,
     enterDemoWorkspace,
-    signInWithGoogle,
-    firebaseUser,
+    accountEmail,
+    activeMode,
     blindTalents,
   } = useWorkspace();
 
-  const [authBusy, setAuthBusy] = useState(false);
   const isId = locale === 'id';
 
   const previewCard: BlindTalentCardData = blindTalents[0]
@@ -75,13 +74,6 @@ export const GatewayPage: React.FC = () => {
   const handleChooseEmployer = () => {
     enterDemoWorkspace('employer');
     navigate('/employer/discover');
-  };
-
-  const handleGoogleSignIn = async () => {
-    setAuthBusy(true);
-    const ok = await signInWithGoogle('talent');
-    setAuthBusy(false);
-    if (ok) navigate('/talent/dashboard');
   };
 
   return (
@@ -136,21 +128,20 @@ export const GatewayPage: React.FC = () => {
             >
               {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </button>
-            {!firebaseUser && (
-              <button
-                type="button"
-                disabled={authBusy}
-                onClick={handleGoogleSignIn}
-                className="hidden sm:inline-flex min-h-[40px] items-center rounded-xl bg-brand px-4 text-xs font-bold text-brand-fg hover:bg-brand-hover whitespace-nowrap"
+            {accountEmail ? (
+              <Link
+                to={activeMode === 'employer' ? '/employer/discover' : '/talent/dashboard'}
+                className="hidden sm:inline-flex min-h-[40px] items-center rounded-xl bg-brand px-4 text-xs font-bold text-brand-fg hover:bg-brand-hover whitespace-nowrap transition-colors"
               >
-                {authBusy
-                  ? isId
-                    ? 'Masuk...'
-                    : 'Signing in...'
-                  : isId
-                  ? 'Masuk Google'
-                  : 'Sign in with Google'}
-              </button>
+                {isId ? 'Buka Workspace' : 'Open Workspace'}
+              </Link>
+            ) : (
+              <Link
+                to="/login"
+                className="hidden sm:inline-flex min-h-[40px] items-center rounded-xl bg-brand px-4 text-xs font-bold text-brand-fg hover:bg-brand-hover whitespace-nowrap transition-colors"
+              >
+                {isId ? 'Masuk' : 'Sign In'}
+              </Link>
             )}
           </div>
         </div>
